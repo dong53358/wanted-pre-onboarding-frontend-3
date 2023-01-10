@@ -48,17 +48,14 @@ function App() {
     e.preventDefault();
     await searchApi(text)
       .then((response) => {
-        console.log(response);
         const data = response;
         if (data) {
           setSearchData(data);
-          console.log("searchData : ", searchData);
         }
       })
       .catch((error) => {
-        console.log("err : ", error);
+        console.log(error);
       });
-    console.log(searchData);
   };
 
   const onchange = (e: React.FormEvent<HTMLInputElement>) => {
@@ -76,6 +73,11 @@ function App() {
           <FaSearch />
         </SearchBtn>
       </SearchForm>
+      <div>
+        {searchData.map((data: any) => (
+          <li key={data.sickCd}>{data.sickNm}</li>
+        ))}
+      </div>
     </Main>
   );
 }
