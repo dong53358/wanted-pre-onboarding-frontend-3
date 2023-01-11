@@ -31,7 +31,7 @@ const SearchForm = styled.form`
 `;
 
 const SearchInput = styled.input`
-  width: 490px;
+  width: 520px;
   height: 60px;
   font-size: 18px;
   font-weight: bold;
@@ -56,7 +56,7 @@ const SearchBtn = styled.button`
 `;
 
 const SuggestionSearch = styled.div`
-  width: 450px;
+  width: 480px;
   font-size: 17px;
   padding: 25px;
   border-radius: 20px;
@@ -68,6 +68,9 @@ const SuggestionSearch = styled.div`
   }
   div {
     margin-bottom: 15px;
+    &:hover {
+      background-color: var(--gray-400);
+    }
   }
 `;
 
@@ -77,6 +80,7 @@ function App() {
   const [isSearched, setIsSearched] = useState(false);
   const debounceText = useDebounce(text, 800);
 
+  const x: any = [{ sickCd: "x00", sickNm: "검색어 없음" }];
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
   };
@@ -92,13 +96,16 @@ function App() {
             console.log("api 호출");
             const data = response;
             if (data) {
-              setSearchData(data);
+              setSearchData(data.slice(0, 10));
               setIsSearched(true);
             }
           })
           .catch((error) => {
             console.log(error);
           });
+      } else {
+        setSearchData(x);
+        setIsSearched(true);
       }
     })();
   }, [debounceText]);
@@ -123,8 +130,9 @@ function App() {
           <FaSearch />
         </SearchBtn>
       </SearchForm>
-      {!isSearched ? null : (
+      {isSearched ? (
         <SuggestionSearch>
+          <div>추천 검색어</div>
           {searchData.map((data: any) => (
             <div key={data.sickCd}>
               <span>
@@ -134,7 +142,7 @@ function App() {
             </div>
           ))}
         </SuggestionSearch>
-      )}
+      ) : null}
     </Main>
   );
 }
