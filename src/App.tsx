@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import styled from "styled-components";
 import { FaSearch } from "react-icons/fa";
 import { searchApi } from "./api/search";
 import { useDebounce } from "./hooks/useDebounce";
+import { setDefaultResultOrder } from "dns";
 
 const Main = styled.div`
   display: flex;
@@ -31,7 +32,7 @@ const SearchForm = styled.form`
 `;
 
 const SearchInput = styled.input`
-  width: 520px;
+  width: 480px;
   height: 60px;
   font-size: 18px;
   font-weight: bold;
@@ -49,43 +50,92 @@ const SearchBtn = styled.button`
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: var(--success);
   font-size: 20px;
   padding: 10px;
   border-radius: 50%;
+  &:hover {
+    opacity: 0.8;
+  }
 `;
 
-const SuggestionSearch = styled.div`
+const SuggestionSearch = styled.ul`
   width: 480px;
   font-size: 17px;
-  padding: 25px;
   border-radius: 20px;
   background-color: white;
   margin-top: 10px;
   margin-right: 50px;
+  padding: 10px 0px;
+  div:first-child {
+    padding: 15px;
+  }
   span {
     margin-right: 10px;
   }
-  div {
-    margin-bottom: 15px;
-    &:hover {
-      background-color: var(--gray-400);
-    }
+`;
+const SearchItem = styled.li<{ isFocus?: boolean }>`
+  padding: 10px;
+  background-color: ${(props) => (props.isFocus ? "#ededed" : "#fff")};
+  &:hover {
+    background-color: var(--gray-300);
   }
 `;
 
+interface IsearchData {
+  sickCd: string;
+  sickNm: string;
+}
+
 function App() {
   const [text, setText] = useState("");
-  const [searchData, setSearchData] = useState([]);
+  const [searchData, setSearchData] = useState<IsearchData[]>([]);
   const [isSearched, setIsSearched] = useState(false);
+  const [isAutoSearch, setIsAutoSearch] = useState(false);
+  const [autoSearchKeyword, setAutoSearchKeyword] = useState("");
+  const [index, setIndex] = useState(-1);
+  const autoRef = useRef<HTMLUListElement>(null);
   const debounceText = useDebounce(text, 800);
 
+  const ArrowDown = "ArrowDown";
+  const ArrowUp = "ArrowUp";
+  const Escape = "Escape";
+
   const x: any = [{ sickCd: "x00", sickNm: "검색어 없음" }];
+
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    window.open(`https://clinicaltrialskorea.com/studies?conditions=${text}`);
   };
+
   const onchange = async (e: React.FormEvent<HTMLInputElement>) => {
     setText(e.currentTarget.value);
+  };
+
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    switch (e.key) {
+      case ArrowDown:
+        setIndex(index + 1);
+        if (autoRef.current?.childElementCount === index + 1) setIndex(0);
+        if (index === -1) {
+          setIsAutoSearch(true);
+        }
+        setAutoSearchKeyword(searchData[index + 1].sickNm);
+        break;
+      case ArrowUp:
+        setIndex(index - 1);
+        if (index <= 0) {
+          setIndex(-1);
+        }
+        if (index === 0) {
+          setIsAutoSearch(false);
+        }
+        setAutoSearchKeyword(searchData[index - 1].sickNm);
+        break;
+      case Escape:
+        setIndex(-1);
+        setIsAutoSearch(false);
+        break;
+    }
   };
 
   useEffect(() => {
@@ -105,7 +155,6 @@ function App() {
           });
       } else {
         setSearchData(x);
-        setIsSearched(true);
       }
     })();
   }, [debounceText]);
@@ -120,10 +169,11 @@ function App() {
         <SearchInput
           type="search"
           name="p"
-          value={text}
+          value={isAutoSearch ? autoSearchKeyword : text}
           onChange={onchange}
           onFocus={() => setIsSearched(true)}
           onBlur={() => setIsSearched(false)}
+          onKeyDown={onKeyDown}
           placeholder="질환명을 입력해 주세요."
         />
         <SearchBtn type="submit">
@@ -131,15 +181,22 @@ function App() {
         </SearchBtn>
       </SearchForm>
       {isSearched ? (
-        <SuggestionSearch>
+        <SuggestionSearch ref={autoRef}>
           <div>추천 검색어</div>
-          {searchData.map((data: any) => (
-            <div key={data.sickCd}>
+          {searchData.map((data: any, idx) => (
+            <SearchItem
+              isFocus={index === idx ? true : false}
+              key={data.sickCd}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                setText(data.sickNm);
+              }}
+            >
               <span>
                 <FaSearch />
               </span>
               <span>{data.sickNm}</span>
-            </div>
+            </SearchItem>
           ))}
         </SuggestionSearch>
       ) : null}
