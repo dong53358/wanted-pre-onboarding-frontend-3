@@ -19,7 +19,7 @@ instance.interceptors.request.use(
 axios.interceptors.response.use(
   function (response) {
     // 응답 데이터를 가공
-    // ...
+    console.log("api 호출");
     return response;
   },
   function (error) {
