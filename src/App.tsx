@@ -104,7 +104,13 @@ function App() {
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    window.open(`https://clinicaltrialskorea.com/studies?conditions=${text}`);
+    if (isAutoSearch) {
+      window.open(
+        `https://clinicaltrialskorea.com/studies?conditions=${autoSearchKeyword}`
+      );
+    } else {
+      window.open(`https://clinicaltrialskorea.com/studies?conditions=${text}`);
+    }
   };
 
   const onchange = async (e: React.FormEvent<HTMLInputElement>) => {
