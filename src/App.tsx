@@ -3,7 +3,6 @@ import styled from "styled-components";
 import { FaSearch } from "react-icons/fa";
 import { searchApi } from "./api/search";
 import { useDebounce } from "./hooks/useDebounce";
-import { setDefaultResultOrder } from "dns";
 
 const Main = styled.div`
   display: flex;
@@ -69,6 +68,9 @@ const SuggestionSearch = styled.ul`
   div:first-child {
     padding: 15px;
   }
+  div:nth-child(2) {
+    padding: 15px;
+  }
   span {
     margin-right: 10px;
   }
@@ -100,8 +102,6 @@ function App() {
   const ArrowUp = "ArrowUp";
   const Escape = "Escape";
 
-  const x: any = [{ sickCd: "x00", sickNm: "검색어 없음" }];
-
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     window.open(`https://clinicaltrialskorea.com/studies?conditions=${text}`);
@@ -109,31 +109,41 @@ function App() {
 
   const onchange = async (e: React.FormEvent<HTMLInputElement>) => {
     setText(e.currentTarget.value);
+    setAutoSearchKeyword(e.currentTarget.value);
   };
 
   const onKeyDown = (e: React.KeyboardEvent) => {
     switch (e.key) {
       case ArrowDown:
+        if (searchData.length === 0) {
+          return;
+        }
         setIndex(index + 1);
-        if (autoRef.current?.childElementCount === index + 1) setIndex(0);
-        if (index === -1) {
+        // if (autoRef.current?.childElementCount === index + 1) {
+        //   setIndex(0);
+        // }
+        setAutoSearchKeyword(searchData[index + 1].sickNm);
+        if (index >= 0) {
           setIsAutoSearch(true);
         }
-        setAutoSearchKeyword(searchData[index + 1].sickNm);
+
         break;
       case ArrowUp:
+        if (searchData.length === 0) {
+          return;
+        }
         setIndex(index - 1);
         if (index <= 0) {
           setIndex(-1);
         }
-        if (index === 0) {
+        if (index === -1) {
           setIsAutoSearch(false);
         }
         setAutoSearchKeyword(searchData[index - 1].sickNm);
         break;
       case Escape:
         setIndex(-1);
-        setIsAutoSearch(false);
+        // setIsAutoSearch(false);
         break;
     }
   };
@@ -147,14 +157,13 @@ function App() {
             const data = response;
             if (data) {
               setSearchData(data.slice(0, 10));
-              setIsSearched(true);
             }
           })
           .catch((error) => {
             console.log(error);
           });
       } else {
-        setSearchData(x);
+        setSearchData([]);
       }
     })();
   }, [debounceText]);
@@ -183,21 +192,37 @@ function App() {
       {isSearched ? (
         <SuggestionSearch ref={autoRef}>
           <div>추천 검색어</div>
-          {searchData.map((data: any, idx) => (
-            <SearchItem
-              isFocus={index === idx ? true : false}
-              key={data.sickCd}
-              onMouseDown={(e) => {
-                e.preventDefault();
-                setText(data.sickNm);
-              }}
-            >
+          {!text && (
+            <div>
               <span>
                 <FaSearch />
               </span>
-              <span>{data.sickNm}</span>
-            </SearchItem>
-          ))}
+              <span>검색어 없음</span>
+            </div>
+          )}
+          {searchData && (
+            <div>
+              {searchData.map((data: any, idx) => (
+                <SearchItem
+                  isFocus={index === idx ? true : false}
+                  key={data.sickCd}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    setText(data.sickNm);
+                  }}
+                >
+                  <span>
+                    <FaSearch />
+                  </span>
+                  <span>
+                    {data.sickNm.split(text)[0]}
+                    <strong>{text}</strong>
+                    {data.sickNm.split(text)[1]}
+                  </span>
+                </SearchItem>
+              ))}
+            </div>
+          )}
         </SuggestionSearch>
       ) : null}
     </Main>
